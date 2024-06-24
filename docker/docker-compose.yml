@@ -1,0 +1,37 @@
+services:
+  db:
+    image: "mysql:8.0.37"
+    environment:
+      MYSQL_DATABASE: hbnb_evo_db
+      MYSQL_USER: hbnb_evo
+      MYSQL_PASSWORD: hbnb_evo_pwd
+      MYSQL_ROOT_PASSWORD: password
+    container_name: "hbnb_evo_2_db"
+    restart: always
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      # Map local port 3307 to container port 3306
+      # I'm only doing this because my local port 3306 is used
+      # by something and docker-compose will give an error
+      - "3307:3306"
+    networks:
+      - private
+  server:
+    image: "ubuntu:latest"
+    environment:
+      IS_DOCKER_CONTAINER: 1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "hbnb_evo_2_server"
+    restart: always
+    ports:
+      - "5000:5000"
+    networks:
+      - private
+    depends_on:
+      - db
+
+networks:
+  private:
