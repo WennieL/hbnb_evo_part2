@@ -4,7 +4,6 @@
 from datetime import datetime
 import uuid
 import re
-from flask import jsonify, request, abort
 from sqlalchemy import Column, String, DateTime
 from data import storage, USE_DB_STORAGE, Base
 
@@ -88,7 +87,7 @@ class Review(Base):
         else:
             raise ValueError("Rating must be a number between 0 and 5")
 
-    # # --- Static methods --- removed to review_service
+    # # --- Static methods --- removed to servie.review
     # @staticmethod
     # def all_reviews():
     #     """ Return all reviews """

@@ -17,7 +17,7 @@ def all_reviews():
         review_data = storage.get('Review')
     except IndexError as exc:
         print("Error: ", exc)
-        return "Unable to load reviews!", 500
+        abort(500, "Unable to load reviews!")
 
     if USE_DB_STORAGE:
         for row in review_data:
@@ -87,7 +87,7 @@ def all_reviews():
 #     return jsonify(data), 200
 
 
-@staticmethod
+@ staticmethod
 def get_specific_review_by_user_id(user_id):
     """Returns specified reviews of a user"""
 
@@ -169,7 +169,7 @@ def get_specific_review_by_user_id(user_id):
 #     return jsonify(data), 200
 
 
-@staticmethod
+@ staticmethod
 def create_new_review(place_id):
     """Creates a new review for the specified place"""
 
@@ -226,18 +226,18 @@ def create_new_review(place_id):
     return jsonify(output), 200
 
 
-@staticmethod
+@ staticmethod
 def update_review(place_id):
     """update exisitng review by place_id"""
 
     if not request.json:
-        abort(400, "Not a JSON")
+        abort(400, "Request body must be JSON")
 
     data = request.get_json()
 
     try:
         result = storage.update('Review', place_id, data, [
-                                "feedback", "rating"])
+            "feedback", "rating"])
 
     except IndexError as exc:
         print("Error: ", exc)

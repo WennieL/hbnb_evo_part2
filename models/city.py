@@ -8,6 +8,7 @@ from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from data import storage, USE_DB_STORAGE, Base
 
+
 class City(Base):
     """Representation of city """
 
@@ -24,7 +25,8 @@ class City(Base):
         created_at = Column(DateTime, nullable=False, default=datetime.now())
         updated_at = Column(DateTime, nullable=False, default=datetime.now())
         __name = Column("name", String(128), nullable=False)
-        __country_id = Column("country_id", String(128), ForeignKey('countries.id'), nullable=False)
+        __country_id = Column("country_id", String(
+            128), ForeignKey('countries.id'), nullable=False)
         country = relationship("Country", back_populates="cities")
 
     # constructor
@@ -55,7 +57,8 @@ class City(Base):
         """Setter for private prop name"""
 
         # ensure that the value is not spaces-only and is alphabets + spaces only
-        is_valid_name = len(value.strip()) > 0 and re.search("^[a-zA-Z ]+$", value)
+        is_valid_name = len(value.strip()) > 0 and re.search(
+            "^[a-zA-Z ]+$", value)
         if is_valid_name:
             self.__name = value
         else:
@@ -74,6 +77,3 @@ class City(Base):
             self.__country_id = value
         else:
             raise ValueError("Invalid country_id specified: {}".format(value))
-
-    # --- Static methods ---
-    # TODO:
