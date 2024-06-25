@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from flask import Flask, jsonify
+from flask import Flask
 from api.v1 import api_routes
 from models.country import Country
 from models.user import User
@@ -9,10 +9,12 @@ from data import USE_DB_STORAGE
 app = Flask(__name__)
 app.register_blueprint(api_routes)
 
+
 @app.route('/')
 def hello_world():
     """ Hello world """
     return 'Hello World'
+
 
 @app.route('/', methods=["POST"])
 def hello_world_post():
@@ -22,6 +24,8 @@ def hello_world_post():
 
 # Examples - These will only work with DB Storage!
 # We're using the power of relationships to grab the data we need!
+
+
 @app.route('/example/places_amenities')
 def places_amenities_get():
     """ gives any example of how to use relationships to access data """
@@ -42,6 +46,7 @@ def places_amenities_get():
         place_amenities[specific_place.name] = amenities_list
 
     return place_amenities
+
 
 @app.route('/example/amenities_places')
 def amenities_places_get():
@@ -64,6 +69,7 @@ def amenities_places_get():
 
     return amenity_places
 
+
 @app.route('/example/malaysia_cities')
 def malaysia_cities_get():
     """ Example to show how to get cities data for a country using relationships """
@@ -83,11 +89,12 @@ def malaysia_cities_get():
                 "id": v.id,
                 "name": v.name,
                 "country_id": v.country_id,
-                "created_at":v.created_at.strftime(Country.datetime_format),
-                "updated_at":v.updated_at.strftime(Country.datetime_format)
+                "created_at": v.created_at.strftime(Country.datetime_format),
+                "updated_at": v.updated_at.strftime(Country.datetime_format)
             })
 
     return data
+
 
 @app.route('/example/kuala_lumpur_parent_country')
 def kl_parent_country_get():

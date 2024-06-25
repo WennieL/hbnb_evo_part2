@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+
 class DBStorage():
     """ Class for reading data from databases """
     __engine = None
@@ -48,7 +49,8 @@ class DBStorage():
             else:
                 db = "hbnb_evo_db"
 
-        self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.format(user, pwd, host, db))
+        self.__engine = create_engine(
+            'mysql+mysqldb://{}:{}@{}/{}'.format(user, pwd, host, db))
 
         if is_testing == "1":
             Base.metadata.drop_all(self.__engine)
@@ -60,14 +62,16 @@ class DBStorage():
         Session = scoped_session(session_factory)
         self.__session = Session()
 
-    def get(self, class_name = "", record_id = ""):
+    def get(self, class_name="", record_id=""):
         """ Return data for specified class name with or without record id"""
 
         if class_name == "":
-            raise IndexError("Unable to load Model data. No class name specified")
+            raise IndexError(
+                "Unable to load Model data. No class name specified")
 
         if not self.__module_names[class_name]:
-            raise IndexError("Unable to load Model data. Specified class name not found")
+            raise IndexError(
+                "Unable to load Model data. Specified class name not found")
 
         namespace = self.__module_names[class_name]
         module = importlib.import_module("models." + namespace)
@@ -77,9 +81,11 @@ class DBStorage():
             rows = self.__session.query(class_).all()
         else:
             try:
-                rows = self.__session.query(class_).where(class_.id == record_id).limit(1).one()
+                rows = self.__session.query(class_).where(
+                    class_.id == record_id).limit(1).one()
             except:
-                raise IndexError("Unable to load Model data. Specified id not found")
+                raise IndexError(
+                    "Unable to load Model data. Specified id not found")
 
         return rows
 
@@ -95,7 +101,7 @@ class DBStorage():
         self.__session.commit()
         self.__session.refresh(new_record)
 
-    def update(self, class_name, record_id, update_data, allowed = None):
+    def update(self, class_name, record_id, update_data, allowed=None):
         """ Updates existing record of specified class """
 
         # 1. find the record using the record_id
@@ -112,7 +118,8 @@ class DBStorage():
         class_ = getattr(module, class_name)
 
         try:
-            record = self.__session.query(class_).where(class_.id == record_id).limit(1).one()
+            record = self.__session.query(class_).where(
+                class_.id == record_id).limit(1).one()
         except:
             raise IndexError("Unable to find the record to update")
 
@@ -135,3 +142,23 @@ class DBStorage():
 
         # For safety, don't return the original record. Return a copy instead
         return deepcopy(record)
+
+    def delete(self, class_name, record_id):
+        """ Deletes an existing record of specified class by ID """
+
+        if class_name.strip() == "" or not self.__module_names.get(class_name):
+            raise IndexError("Specified class name is not valid")
+
+        namespace = self.__module_names[class_name]
+        module = importlib.import_module("models." + namespace)
+        class_ = getattr(module, class_name)
+
+        try:
+            record = self.__session.query(class_).filter_by(id=record_id).one()
+            self.__session.delete(record)
+            self.__session.commit()
+        except:
+            raise IndexError(
+                f"Unable to delete {class_name} with ID: {record_id}")
+
+        return True
