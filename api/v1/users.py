@@ -1,22 +1,22 @@
 #!/usr/bin/python3
+
 """ objects that handles all default RestFul API actions for User"""
 from api.v1 import api_routes
-from flask import jsonify, abort, request
-from services import user_service
+from models.user import User
 
 
 @api_routes.route('/users', methods=["GET"])
 def users_get():
     """returns Users"""
     # use the User class' static .all method
-    return user_service.all_users()
+    return User.all_users()
 
 
 @api_routes.route('/users/<user_id>', methods=["GET"])
 def users_specific_get(user_id):
     """returns specified user"""
     # use the User class' static .specific method
-    return user_service.specific(user_id)
+    return User.specific(user_id)
 
 
 @api_routes.route('/users', methods=["POST"])
@@ -28,7 +28,7 @@ def users_post():
     #   -d '{"first_name":"Peter","last_name":"Parker","email":"p.parker@daily-bugle.net","password":"123456"}'
 
     # use the User class' static .create method
-    return user_service.create()
+    return User.create()
 
 
 @api_routes.route('/users/<user_id>', methods=["PUT"])
@@ -41,10 +41,10 @@ def users_put(user_id):
 
     # use the User class' static .update method
     # can only update first_name and last_name
-    return user_service.update(user_id, request.get_json())
+    return User.update(user_id)
 
 
 @api_routes.route('/users/<user_id>', methods=["DELETE"])
 def delete_user(user_id):
     """delete an existing user id"""
-    return user_service.delete(user_id)
+    return User.delete(user_id)

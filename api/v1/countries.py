@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """ objects that handles all default RestFul API actions for Country """
 from api.v1 import api_routes
 from models.country import Country

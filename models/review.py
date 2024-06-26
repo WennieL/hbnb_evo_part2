@@ -1,17 +1,27 @@
 #!/usr/bin/python
-""" Review model """
+""" User model """
 
 from datetime import datetime
 import uuid
 import re
-from sqlalchemy import Column, String, DateTime
+from flask import jsonify, request, abort
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
 from data import storage, USE_DB_STORAGE, Base
 
 
 class Review(Base):
-    """Representation of review """
+    """Representation of Review """
 
     datetime_format = "%Y-%m-%dT%H:%M:%S.%f"
+
+    # Class attrib defaults
+    id = None
+    __commentor_user_id = ""
+    __place_id = ""
+    __feedback = ""
+    __rating = 0
+    created_at = None
+    updated_at = None
 
     if USE_DB_STORAGE:
         __tablename__ = 'reviews'
@@ -25,7 +35,7 @@ class Review(Base):
         __feedback = Column(
             "feedback", String(256), nullable=False, default="")
         __rating = Column(
-            "rating", String(60), nullable=False, default="0.0")
+            "rating", Integer, nullable=False, default="0.0")
 
     def __init__(self, *args, **kwargs):
         """Constructor for Review"""
@@ -88,249 +98,272 @@ class Review(Base):
             raise ValueError("Rating must be a number between 0 and 5")
 
     # # --- Static methods --- removed to servie.review
-    # @staticmethod
-    # def all_reviews():
-    #     """ Return all reviews """
+    @staticmethod
+    def all_reviews():
+        """ Return all reviews """
+        data = []
 
-    #     data = []
+        try:
+            review_data = storage.get('Review')
+        except IndexError as exc:
+            print("Error: ", exc)
+            abort(500, "Unable to load reviews!")
 
-    #     try:
-    #         review_data = storage.get('Review')
-    #     except IndexError as exc:
-    #         print("Error: ", exc)
-    #         return "Unable to load reviews!", 500
+        if USE_DB_STORAGE:
+            for row in review_data:
+                data.append({
+                    "id": row.id,
+                    "commentor_user_id": row.commentor_user_id,
+                    "place_id": row.place_id,
+                    "feedback": row.feedback,
+                    "rating": row.rating,
+                    "created_at": row.created_at.strftime(Review.datetime_format),
+                    "updated_at": row.updated_at.strftime(Review.datetime_format)
+                })
+        else:
+            for k, v in review_data.items():
+                data.append({
+                    "id": v['id'],
+                    "commentor_user_id": v['commentor_user_id'],
+                    "place_id": v['place_id'],
+                    "feedback": v['feedback'],
+                    "rating": v['rating'],
+                    "created_at": datetime.fromtimestamp(v['created_at']),
+                    "updated_at": datetime.fromtimestamp(v['updated_at'])
+                })
 
-    #     if USE_DB_STORAGE:
-    #         for row in review_data:
-    #             reviewer_name = row.commentor_user_id  # Default to user ID if no name found
-    #             if row.commentor_user_id:
-    #                 reviewer = storage.get('User', row.commentor_user_id)
-    #                 reviewer_name = f"{reviewer.first_name} {reviewer.last_name}"
+        return jsonify(data), 201
 
-    #             data.append({
-    #                 "review": row.feedback,
-    #                 "rating": f"{row.rating} / 5",
-    #                 "reviewer_name": reviewer_name,
-    #                 "created_at": row.created_at.strftime(Review.datetime_format),
-    #                 "updated_at": row.updated_at.strftime(Review.datetime_format)
-    #             })
-    #     else:
-    #         for review_id, review_value in review_data.items():
-    #             # Default to user ID if no name found
-    #             reviewer_name = review_value["commentor_user_id"]
-    #             reviewer = storage.get(
-    #                 'User', review_value["commentor_user_id"])
-    #             reviewer_name = f"{reviewer.first_name} {reviewer.last_name}"
 
-    #             data.append({
-    #                 "review_place_id": review_value["place_id"],
-    #                 "place_name": storage.get('Place', review_value["place_id"]).name,
-    #                 "reviewer_name": reviewer_name,
-    #                 "created_at": datetime.fromtimestamp(review_value['created_at']),
-    #                 "updated_at": datetime.fromtimestamp(review_value['updated_at'])
-    #             })
+# @staticmethod
+# def get_specific_review_by_place_id(place_id):
+#     """Returns specified reviews of a place"""
 
-    #     return jsonify(data), 200
+#     review_data = storage.get('Review')
+#     place_data = storage.get('Place', place_id)
 
-    # @staticmethod
-    # def get_specific_review_by_place_id(place_id):
-    #     """Returns specified reviews of a place"""
+#     if not place_data or place_id not in place_data:
+#         abort(404, description=f"Place with ID: {place_id} not found")
 
-    #     review_data = storage.get('Review')
-    #     place_data = storage.get('Place')
-    #     user_data = storage.get('User')
+#     data = []
 
-    #     reviewer_data = {}
+#     if USE_DB_STORAGE:
+#         for review in review_data:
+#             if review.place_id == place_id:
+#                 reviewer = storage.get('User', review.commentor_user_id)
+#                 data.append({
+#                     # Adjust to the correct attribute name
+#                     "place_name": place_data[place_id].place_name,
+#                     "review": review.feedback,
+#                     "rating": f"{review.rating} / 5",
+#                     "reviewer": f"{reviewer.first_name} {reviewer.last_name}",
+#                     "created_at": review.created_at.strftime(Review.datetime_format),
+#                     "updated_at": review.updated_at.strftime(Review.datetime_format)
+#                 })
+#     else:
+#         for review_id, review in review_data.items():
+#             if review["place_id"] == place_id:
+#                 reviewer = storage.get('User', review["commentor_user_id"])
+#                 data.append({
+#                     # Adjust to the correct attribute name
+#                     "place_name": place_data[place_id]["place_name"],
+#                     "review": review["feedback"],
+#                     "rating": f"{review['rating']} / 5",
+#                     "reviewer": f"{reviewer['first_name']} {reviewer['last_name']}",
+#                     "created_at": datetime.fromtimestamp(review['created_at']).strftime(Review.datetime_format),
+#                     "updated_at": datetime.fromtimestamp(review['updated_at']).strftime(Review.datetime_format)
+#                 })
 
-    #     for review_value in review_data.values():
-    #         if review_value["place_id"] == place_id:
-    #             review_place_id = review_value["place_id"]
-    #             place_name = place_data[review_place_id]["name"]
-    #             commentor_id = review_value["commentor_user_id"]
-    #             reviewer_first_name = user_data[commentor_id]["first_name"]
-    #             reviewer_last_name = user_data[commentor_id]["last_name"]
+#     return jsonify(data), 200
 
-    #             if place_name not in reviewer_data:
-    #                 reviewer_data[place_name] = []
+    @staticmethod
+    def get_specific_review_by_user_id(user_id):
+        """Returns specified reviews of a user"""
 
-    #             reviewer_data[place_name].append({
-    #                 "review": review_value["feedback"],
-    #                 "rating": f"{review_value['rating']} / 5",
-    #                 "reviewer": f"{reviewer_first_name} {reviewer_last_name}",
-    #                 "created_at": datetime.fromtimestamp(review_value['created_at']).isoformat(),
-    #                 "updated_at": datetime.fromtimestamp(review_value['updated_at']).isoformat()
-    #             })
+        review_data = storage.get('Review')
+        user_data = storage.get('User', user_id)
 
-    #     if not reviewer_data:
-    #         abort(
-    #             404, description=f"No reviews found for place with ID: {place_id}")
+        if not user_id in user_data:
+            abort(404, description=f"User with ID: {user_id} not found")
 
-    #     return jsonify(reviewer_data), 200
+        data = []
 
-    # @staticmethod
-    # def get_specific_review_by_user_id(user_id):
-    #     """Returns specified reviews of a user"""
+        if USE_DB_STORAGE:
+            for review in review_data:
+                if review.commentor_user_id == user_id:
+                    reviewer = storage.get('User', review.commentor_user_id)
+                    data.append({
+                        "place_name": review.place_name,
+                        "review": review.feedback,
+                        "rating": f"{review.rating} / 5",
+                        "reviewer": f"{reviewer.first_name} {reviewer.last_name}",
+                        "created_at": review.created_at.strftime(Review.datetime_format),
+                        "updated_at": review.updated_at.strftime(Review.datetime_format)
+                    })
+        else:
+            for review_id, review in review_data.items():
+                if review["commentor_user_id"] == user_id:
+                    reviewer = storage.get('User', review["commentor_user_id"])
+                    data.append({
+                        "place_name": review["place_name"],
+                        "review": review["feedback"],
+                        "rating": f"{review['rating']} / 5",
+                        "reviewer": f"{reviewer['first_name']} {reviewer['last_name']}",
+                        "created_at": datetime.fromtimestamp(review['created_at']).strftime(Review.datetime_format),
+                        "updated_at": datetime.fromtimestamp(review['updated_at']).strftime(Review.datetime_format)
+                    })
 
-    #     # Assuming review_data, place_data, and user_data are fetched from your data storage
-    #     review_data = storage.get('Review')
-    #     place_data = storage.get('Place')
-    #     user_data = storage.get('User')
+        return jsonify(data), 200
 
-    #     if not user_id in user_data:
-    #         abort(404, description=f"User with ID: {user_id} not found")
 
-    #     reviews = []
+# @staticmethod
+# def get_specific_review_by_review_id(review_id):
+#     """Returns specified review by review ID"""
 
-    #     # Iterate through review_data to find reviews matching user_id
-    #     for review_value in review_data.values():
-    #         if review_value["commentor_user_id"] == user_id:
-    #             review_place_id = review_value["place_id"]
-    #             place_name = place_data[review_place_id]["name"]
-    #             reviewer_first_name = user_data[user_id]["first_name"]
-    #             reviewer_last_name = user_data[user_id]["last_name"]
+#     review_data = storage.get('Review')
 
-    #             reviews.append({
-    #                 "place_name": place_name,
-    #                 "review": review_value["feedback"],
-    #                 "rating": f"{review_value['rating']} / 5",
-    #                 "reviewer": f"{reviewer_first_name} {reviewer_last_name}",
-    #                 "created_at": datetime.fromtimestamp(review_value['created_at']).isoformat(),
-    #                 "updated_at": datetime.fromtimestamp(review_value['updated_at']).isoformat()
-    #             })
+#     if not review_data or review_id not in review_data:
+#         abort(404, description=f"Review with ID: {review_id} not found")
 
-    #     if not reviews:
-    #         abort(
-    #             404, description=f"No reviews found for user with ID: {user_id}")
+#     data = []
 
-    #     return jsonify(reviews), 200
+#     if USE_DB_STORAGE:
+#         # Assuming review_data is a list of Review objects
+#         for review in review_data:
+#             if review.review_id == review_id:
+#                 reviewer = storage.get('User', review.commentor_user_id)
+#                 data.append({
+#                     "place_name": review.place_name,  # Adjust to correct attribute name
+#                     "review": review.feedback,
+#                     "rating": f"{review.rating} / 5",
+#                     "reviewer": f"{reviewer.first_name} {reviewer.last_name}",
+#                     "created_at": review.created_at.strftime(Review.datetime_format),
+#                     "updated_at": review.updated_at.strftime(Review.datetime_format)
+#                 })
+#     else:
+#         # Assuming review_data is a dictionary where reviews are indexed by review_id
+#         if review_id in review_data:
+#             review = review_data[review_id]
+#             reviewer = storage.get('User', review["commentor_user_id"])
+#             data.append({
+#                 # Adjust to correct attribute name
+#                 "place_name": review["place_name"],
+#                 "review": review["feedback"],
+#                 "rating": f"{review['rating']} / 5",
+#                 "reviewer": f"{reviewer['first_name']} {reviewer['last_name']}",
+#                 "created_at": datetime.fromtimestamp(review['created_at']).strftime(Review.datetime_format),
+#                 "updated_at": datetime.fromtimestamp(review['updated_at']).strftime(Review.datetime_format)
+#             })
 
-    # @staticmethod
-    # def get_specific_review_by_review_id(review_id):
-    #     """Returns specified review by review ID"""
+#     return jsonify(data), 200
 
-    #     review_data = storage.get('Review')
-    #     place_data = storage.get('Place')
-    #     user_data = storage.get('User')
 
-    #     if review_id not in review_data:
-    #         abort(404, description=f"Review with ID: {review_id} not found")
+    @staticmethod
+    def create_new_review(place_id):
+        """Creates a new review for the specified place"""
 
-    #     review_value = review_data[review_id]
-    #     review_place_id = review_value["place_id"]
-    #     place_name = place_data[review_place_id]["name"]
-    #     commentor_id = review_value["commentor_user_id"]
-    #     reviewer_first_name = user_data[commentor_id]["first_name"]
-    #     reviewer_last_name = user_data[commentor_id]["last_name"]
+        if not request.json:
+            abort(400, "Request body must be JSON")
 
-    #     review_details = {
-    #         "place_name": place_name,
-    #         "review": review_value["feedback"],
-    #         "rating": f"{review_value['rating']} / 5",
-    #         "reviewer": f"{reviewer_first_name} {reviewer_last_name}",
-    #         "created_at": datetime.fromtimestamp(review_value['created_at']).isoformat(),
-    #         "updated_at": datetime.fromtimestamp(review_value['updated_at']).isoformat()
-    #     }
+        data = request.get_json()
 
-    #     return jsonify(review_details), 200
+        required_fields = ["commentor_user_id",
+                           "place_id", "feedback", "rating"]
+        for field in required_fields:
+            if field not in data:
+                abort(400, f"Missing required field: {field}")
 
-    # @staticmethod
-    # def create_new_review(place_id):
-    #     """Creates a new review for the specified place"""
+        if data["place_id"] != place_id:
+            abort(400, "Mismatched place_id in URL and data")
 
-    #     if not request.json:
-    #         abort(400, description="Request does not contain valid JSON data")
+        try:
+            new_review = Review(
+                commentor_user_id=data["commentor_user_id"],
+                place_id=data["place_id"],
+                feedback=data["feedback"],
+                rating=data["rating"]
+            )
+        except ValueError as exc:
+            abort(400, repr(exc))
 
-    #     data = request.json
-    #     required_fields = ['commentor_user_id', 'feedback', 'rating']
+        output = {
+            "id": new_review.id,
+            "commentor_user_id": new_review.commentor_user_id,
+            "place_id": new_review.place_id,
+            "feedback": new_review.feedback,
+            "rating": new_review.rating,
+            "created_at": new_review.created_at,
+            "updated_at": new_review.updated_at
+        }
 
-    #     for field in required_fields:
-    #         if field not in data:
-    #             abort(400, description=f"Missing required field: {field}")
+        try:
+            if USE_DB_STORAGE:
+                storage.add('Review', new_review)
+                output['created_at'] = new_review.created_at.strftime(
+                    Review.datetime_format)
+                output['updated_at'] = new_review.updated_at.strftime(
+                    Review.datetime_format)
+            else:
+                storage.add('Review', output)
+                output['created_at'] = datetime.fromtimestamp(
+                    new_review.created_at)
+                output['updated_at'] = datetime.fromtimestamp(
+                    new_review.updated_at)
+        except IndexError as exc:
+            print("Error: ", exc)
+            return "Unable to add new Place!"
 
-    #     commentor_user_id = data['commentor_user_id']
-    #     feedback = data['feedback']
-    #     rating = data['rating']
+        return jsonify(output), 200
 
-    #     try:
-    #         new_review = Review(
-    #             commentor_user_id=commentor_user_id,
-    #             place_id=place_id,
-    #             feedback=feedback,
-    #             rating=rating
-    #         )
-    #     except ValueError as e:
-    #         abort(400, description=str(e))
+    @staticmethod
+    def update_review(place_id):
+        """update exisitng review by place_id"""
 
-    #     new_review.id = str(uuid.uuid4())
-    #     new_review.created_at = datetime.now()
-    #     new_review.updated_at = new_review.created_at
+        if not request.json:
+            abort(400, "Request body must be JSON")
 
-    #     storage.add('Review', new_review)
+        data = request.get_json()
 
-    #     response_data = {
-    #         "id": new_review.id,
-    #         "place_id": place_id,
-    #         "commentor_user_id": commentor_user_id,
-    #         "feedback": feedback,
-    #         "rating": f"{new_review.rating} / 5",
-    #         "created_at": new_review.created_at.isoformat(),
-    #         "updated_at": new_review.updated_at.isoformat()
-    #     }
+        try:
+            result = storage.update('Review', place_id, data, [
+                "feedback", "rating"])
 
-    #     return jsonify(response_data), 201
+        except IndexError as exc:
+            print("Error: ", exc)
+            abort(404, f"Review with ID: {place_id} not found")
 
-    # @staticmethod
-    # def update_review(place_id):
-    #     """Updates an existing review using the specified place ID"""
+        if USE_DB_STORAGE:
+            output = {
+                "id": result.id,
+                "commentor_user_id": result.commentor_user_id,
+                "place_id": result.place_id,
+                "feedback": result.feedback,
+                "rating": result.rating,
+                "created_at": result.created_at.strftime(Review.datetime_format),
+                "updated_at": result.updated_at.strftime(Review.datetime_format)
+            }
+        else:
+            output = {
+                "id": result["id"],
+                "commentor_user_id": result["commentor_user_id"],
+                "place_id": result["place_id"],
+                "feedback": result["feedback"],
+                "rating": result["rating"],
+                "created_at": datetime.fromtimestamp(result["created_at"]),
+                "updated_at": datetime.fromtimestamp(result["updated_at"])
+            }
 
-    #     if not request.json:
-    #         abort(400, description="Request does not contain valid JSON data")
+        return jsonify(output), 200
 
-    #     review_id = request.json.get('id')
-    #     if not review_id:
-    #         abort(400, description="Missing review ID")
+    @staticmethod
+    def delete_review(review_id):
+        """Deletes an existing review using the specified review ID"""
 
-    #     try:
-    #         review = storage.get('Review', review_id)
-    #     except IndexError:
-    #         abort(404, description=f"Review with ID: {review_id} not found")
+        try:
+            storage.delete('Review', review_id)
+        except IndexError:
+            abort(404, description=f"Review with ID: {review_id} not found")
+        except Exception as e:
+            abort(400, description=str(e))
 
-    #     if review.place_id != place_id:
-    #         abort(
-    #             400, description=f"Review with ID: {review_id} does not belong to place with ID: {place_id}")
-
-    #     allowed_fields = ['feedback', 'rating']
-
-    #     # Update review object with request data using setattr in a loop
-    #     for field, value in request.json.items():
-    #         if field in allowed_fields:
-    #             setattr(review, field, value)
-
-    #     try:
-    #         updated_review = storage.update_review(review)
-    #     except Exception as e:
-    #         abort(500, description=f"Failed to update review: {str(e)}")
-
-    #     response_data = {
-    #         "id": updated_review.id,
-    #         "place_id": updated_review.place_id,
-    #         "commentor_user_id": updated_review.commentor_user_id,
-    #         "feedback": updated_review.feedback,
-    #         "rating": f"{updated_review.rating} / 5",
-    #         "created_at": updated_review.created_at.isoformat(),
-    #         "updated_at": updated_review.updated_at.isoformat()
-    #     }
-
-    #     return jsonify(response_data), 200
-
-    # @staticmethod
-    # def delete_review(review_id):
-    #     """Deletes an existing review using the specified review ID"""
-    #     try:
-    #         storage.delete('Review', review_id)
-    #     except IndexError:
-    #         abort(404, description=f"Review with ID: {review_id} not found")
-    #     except Exception as e:
-    #         abort(400, description=str(e))
-
-    #     return jsonify({"message": f"Review with ID: {review_id} has been deleted"}), 200
+        return jsonify({"message": f"Review with ID: {review_id} has been deleted"}),
