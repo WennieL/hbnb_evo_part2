@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 
 """ objects that handles all default RestFul API actions for Country """
-from api.v1 import api_routes
+from flask import Blueprint
 from models.country import Country
 
+countries_routes = Blueprint('countries_routes', __name__)
 
-@api_routes.route('/countries', methods=["POST"])
+
+@countries_routes.route('/countries', methods=["POST"])
 def countries_post():
     """ posts data for new country then returns the country data"""
     # -- Usage example --
@@ -13,22 +15,22 @@ def countries_post():
     #    -H "Content-Type: application/json" /
     #    -d '{"key1":"value1","key2":"value2"}'
 
-    return Country.create()
+    return Country.create_country()
 
 
-@api_routes.route('/countries', methods=["GET"])
+@countries_routes.route('/countries', methods=["GET"])
 def countries_get():
     """ returns countires data """
-    return Country.all()
+    return Country.all_country()
 
 
-@api_routes.route('/countries/<country_code>', methods=["GET"])
+@countries_routes.route('/countries/<country_code>', methods=["GET"])
 def countries_specific_get(country_code):
     """ returns specific country data """
     return Country.specific(country_code)
 
 
-@api_routes.route('/countries/<country_code>', methods=["PUT"])
+@countries_routes.route('/countries/<country_code>', methods=["PUT"])
 def countries_put(country_code):
     """ updates existing country data using specified id """
     # -- Usage example --
@@ -40,7 +42,7 @@ def countries_put(country_code):
     return Country.update(country_code)
 
 
-@api_routes.route('/countries/<country_code>/cities', methods=["GET"])
+@countries_routes.route('/countries/<country_code>/cities', methods=["GET"])
 def countries_specific_cities_get(country_code):
     """ returns cities data of specified country """
 

@@ -6,6 +6,7 @@ import uuid
 import re
 from flask import jsonify, request, abort
 from sqlalchemy import Column, String, DateTime
+from sqlalchemy.orm import relationship
 from data import storage, USE_DB_STORAGE, Base
 
 
@@ -15,7 +16,9 @@ class User(Base):
     datetime_format = "%Y-%m-%dT%H:%M:%S.%f"
 
     if USE_DB_STORAGE:
+
         __tablename__ = 'users'
+
         id = Column(String(60), nullable=False, primary_key=True)
         created_at = Column(DateTime, nullable=False, default=datetime.now())
         updated_at = Column(DateTime, nullable=False, default=datetime.now())
@@ -25,8 +28,10 @@ class User(Base):
                              nullable=True, default="")
         __email = Column("email", String(128), nullable=False)
         __password = Column("password", String(128), nullable=False)
-        # properties = relationship("Place", back_populates="owner", cascade="delete, delete-orphan")
-        # reviews = relationship("Review", back_populates="writer", cascade="delete, delete-orphan")
+        properties = relationship(
+            "Place", back_populates="owner", cascade="delete, delete-orphan")
+        reviews = relationship(
+            "Review", back_populates="writer", cascade="delete, delete-orphan")
 
     # Constructor
     def __init__(self, *args, **kwargs):

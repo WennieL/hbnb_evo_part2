@@ -1,25 +1,27 @@
 #!/usr/bin/python3
 
 """ objects that handles all default RestFul API actions for User"""
-from api.v1 import api_routes
+from flask import Blueprint
 from models.user import User
 
+users_routes = Blueprint('users_routes', __name__)
 
-@api_routes.route('/users', methods=["GET"])
+
+@users_routes.route('/users', methods=["GET"])
 def users_get():
     """returns Users"""
     # use the User class' static .all method
     return User.all_users()
 
 
-@api_routes.route('/users/<user_id>', methods=["GET"])
+@users_routes.route('/users/<user_id>', methods=["GET"])
 def users_specific_get(user_id):
     """returns specified user"""
     # use the User class' static .specific method
     return User.specific(user_id)
 
 
-@api_routes.route('/users', methods=["POST"])
+@users_routes.route('/users', methods=["POST"])
 def users_post():
     """ posts data for new user then returns the user data"""
     # -- Usage example --
@@ -31,7 +33,7 @@ def users_post():
     return User.create()
 
 
-@api_routes.route('/users/<user_id>', methods=["PUT"])
+@users_routes.route('/users/<user_id>', methods=["PUT"])
 def users_put(user_id):
     """ updates existing user data using specified id """
     # -- Usage example --
@@ -44,7 +46,7 @@ def users_put(user_id):
     return User.update(user_id)
 
 
-@api_routes.route('/users/<user_id>', methods=["DELETE"])
+@users_routes.route('/users/<user_id>', methods=["DELETE"])
 def delete_user(user_id):
     """delete an existing user id"""
     return User.delete(user_id)

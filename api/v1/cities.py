@@ -1,17 +1,21 @@
 #!/usr/bin/python3
 
 """ objects that handles all default RestFul API actions for City """
-from api.v1 import api_routes
+from flask import Blueprint
 from models.city import City
 
+cities_routes = Blueprint('cities_routes', __name__)
 
-@api_routes.route('/cities', methods=["GET"])
+
+@cities_routes.route('/cities', methods=["GET"])
 def cities_get():
     """ get data for all cities """
     return City.all_cities()
 
+# if country_id is not added, can it be added when new city is added
 
-@api_routes.route('/cities', methods=["POST"])
+
+@cities_routes.route('/cities', methods=["POST"])
 def cities_post():
     """ posts data for new city then returns the city data"""
     # -- Usage example --
@@ -22,25 +26,25 @@ def cities_post():
     return City.create_new_city()
 
 
-@api_routes.route('/cities/<city_id>', methods=["GET"])
+@cities_routes.route('/cities/<city_id>', methods=["GET"])
 def cities_specific_get(city_id):
     """ returns specific city data """
     return City.get_specific_city(city_id)
 
 
-@api_routes.route('/cities/<city_id>', methods=["PUT"])
+@cities_routes.route('/cities/<city_id>', methods=["PUT"])
 def cities_put(city_id):
     """ updates existing city data using specified id """
     return City.update_city(city_id)
 
 
-@ api_routes.route('/cities/<city_id>', methods=["DELETE"])
+@ cities_routes.route('/cities/<city_id>', methods=["DELETE"])
 def delete_city(city_id):
     """delete a city"""
     return City.delete_city(city_id)
 
 
-@api_routes.route('/cities/<city_id>/country', methods=["GET"])
+@cities_routes.route('/cities/<city_id>/country', methods=["GET"])
 def cities_specific_country_get(city_id):
     """ Retrieves the data for the country the city belongs to """
 

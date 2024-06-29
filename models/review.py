@@ -6,6 +6,7 @@ import uuid
 import re
 from flask import jsonify, request, abort
 from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+from sqlalchemy.orm import relationship
 from data import storage, USE_DB_STORAGE, Base
 
 
@@ -19,7 +20,7 @@ class Review(Base):
     __commentor_user_id = ""
     __place_id = ""
     __feedback = ""
-    __rating = 0
+    __rating = 0.0
     created_at = None
     updated_at = None
 
@@ -28,14 +29,18 @@ class Review(Base):
         id = Column(String(60), nullable=False, primary_key=True)
         created_at = Column(DateTime, nullable=False, default=datetime.now())
         updated_at = Column(DateTime, nullable=False, default=datetime.now())
-        __commentor_user_id = Column(
-            "commentor_user_id", String(128), nullable=False, default="")
+        __commentor_user_id = Column("commentor_user_id",
+                                     String(128), ForeignKey('users.id'), nullable=False)
         __place_id = Column(
-            "place_id", String(128), nullable=False, default="")
+            "place_id", String(128), ForeignKey('places.id'), nullable=False)
         __feedback = Column(
-            "feedback", String(256), nullable=False, default="")
+            "feedback", String(1024), nullable=False)
         __rating = Column(
             "rating", Integer, nullable=False, default="0.0")
+        place = relationship(
+            "Place", back_populates="reviews", single_parent=True)
+        writer = relationship(
+            "User", back_populates="reviews", single_parent=True)
 
     def __init__(self, *args, **kwargs):
         """Constructor for Review"""

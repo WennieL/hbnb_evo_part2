@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 
-from flask import Flask, jsonify
+from flask import Flask
 from api.v1 import api_routes
 from models.country import Country
 from models.user import User
 from data import USE_DB_STORAGE
 
+
 app = Flask(__name__)
-app.register_blueprint(api_routes)
+app.register_blueprint(api_routes, url_prefix='/api/v1')
 
 
 @app.route('/')

@@ -48,7 +48,9 @@ class Place(Base):
     __longitude = 0
 
     if USE_DB_STORAGE:
+
         __tablename__ = 'places'
+
         id = Column(String(60), nullable=False, primary_key=True)
         created_at = Column(DateTime, nullable=False, default=datetime.now())
         updated_at = Column(DateTime, nullable=False, default=datetime.now())
@@ -68,10 +70,12 @@ class Place(Base):
             "price_per_night", Integer, nullable=False, default=0)
         __latitude = Column("latitude", Float, nullable=True)
         __longitude = Column("longitude", Float, nullable=True)
+
         amenities = relationship(
             "Amenity", secondary=place_amenity, back_populates='places')
-        # reviews = relationship("Review", back_populates="place")
-        # owner = relationship("User", back_populates="properties")
+        reviews = relationship("Review", back_populates="place")
+        owner = relationship("User", back_populates="properties")
+        city = relationship("City", back_populates="place")
 
     # Constructor
     def __init__(self, *args, **kwargs):
@@ -254,8 +258,8 @@ class Place(Base):
                     "price_per_night": row.price_per_night,
                     "latitude": row.latitude,
                     "longitude": row.longitude,
-                    "created_at": row.created_at.strftime(datetime_format),
-                    "updated_at": row.updated_at.strftime(datetime_format)
+                    "created_at": row.created_at.strftime(Place.datetime_format),
+                    "updated_at": row.updated_at.strftime(Place.datetime_format)
                 })
         else:
             for k, v in place_data.items():
@@ -290,9 +294,6 @@ class Place(Base):
             print("Error: ", exc)
             return "Place not found!"
 
-        if not place_id in place_data:
-            abort(404, description=f"Place with ID: {place_id} not found")
-
         if USE_DB_STORAGE:
             data.append({
                 "id": place_data.id,
@@ -307,8 +308,8 @@ class Place(Base):
                 "price_per_night": place_data.price_per_night,
                 "latitude": place_data.latitude,
                 "longitude": place_data.longitude,
-                "created_at": place_data.created_at.strftime(datetime_format),
-                "updated_at": place_data.updated_at.strftime(datetime_format)
+                "created_at": place_data.created_at.strftime(Place.datetime_format),
+                "updated_at": place_data.updated_at.strftime(Place.datetime_format)
             })
         else:
             data.append({
@@ -346,7 +347,6 @@ class Place(Base):
 
         try:
             new_place = Place(
-                id=data["id"],
                 city_id=data["city_id"],
                 host_id=data["host_id"],
                 name=data["name"],
@@ -428,8 +428,8 @@ class Place(Base):
                 "price_per_night": result.price_per_night,
                 "latitude": result.latitude,
                 "longitude": result.longitude,
-                "created_at": result.created_at.strftime(datetime_format),
-                "updated_at": result.updated_at.strftime(datetime_format)
+                "created_at": result.created_at.strftime(Place.datetime_format),
+                "updated_at": result.updated_at.strftime(Place.datetime_format)
             }
         else:
             output = {
@@ -533,8 +533,8 @@ class Amenity(Base):
                 data.append({
                     "id": row.id,
                     "name": row.name,
-                    "created_at": row.created_at.strftime(datetime_format),
-                    "updated_at": row.updated_at.strftime(datetime_format)
+                    "created_at": row.created_at.strftime(Amenity.datetime_format),
+                    "updated_at": row.updated_at.strftime(Amenity.datetime_format)
                 })
         else:
             for k, v in amenity_data.itmes():
@@ -553,21 +553,15 @@ class Amenity(Base):
 
         amenity_data = storage.get("Amenity", amenity_id)
 
-        if not amenity_id in amenity_data:
-            abort(404, description=f"Amenity with ID: {amenity_id} not found")
-
         data = []
 
         if USE_DB_STORAGE:
-            for row in amenity_data:
-                if amenity.id == amenity_id:
-                    amenity = storage.get("Amenity", amenity.id)
-                    data.append({
-                        "id": row.id,
-                        "name": row.name,
-                        "created_at": row.created_at.strftime(datetime_format),
-                        "updated_at": row.updated_at.strftime(datetime_format)
-                    })
+            data.append({
+                "id": amenity_data.id,
+                "name": amenity_data.name,
+                "created_at": amenity_data.created_at.strftime(Amenity.datetime_format),
+                "updated_at": amenity_data.updated_at.strftime(Amenity.datetime_format)
+            })
         else:
             for k, v in amenity_data.items():
                 if amenity["id"] == amenity_id:

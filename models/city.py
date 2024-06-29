@@ -8,6 +8,7 @@ from flask import jsonify, request, abort
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from data import storage, USE_DB_STORAGE, Base
+# from models.country import Country
 
 
 class City(Base):
@@ -30,7 +31,9 @@ class City(Base):
         __name = Column("name", String(128), nullable=False)
         __country_id = Column("country_id", String(
             128), ForeignKey('countries.id'), nullable=False)
+
         country = relationship("Country", back_populates="cities")
+        place = relationship("Place", back_populates="city")
 
     # constructor
     def __init__(self, *args, **kwargs):
@@ -121,22 +124,17 @@ class City(Base):
 
         city_data = storage.get("City", city_id)
 
-        if not city_id in city_data:
-            abort(404, description=f"City with ID: {city_id} not found")
-
         data = []
 
         if USE_DB_STORAGE:
-            for row in city_data:
-                if city.id == city_id:
-                    city = storage.get("City", city.id)
-                    data.append({
-                        "id": row.id,
-                        "country_id": row.country.id,
-                        "name": row.name,
-                        "created_at": row.created_at.strftime(City.datetime_format),
-                        "update_at": row.updated_at.strftime(City.datetime_format)
-                    })
+
+            data.append({
+                "id": city_data.id,
+                "country_id": city_data.country.id,
+                "name": city_data.name,
+                "created_at": city_data.created_at.strftime(City.datetime_format),
+                "update_at": city_data.updated_at.strftime(City.datetime_format)
+            })
         else:
             for k, v in city_data.items():
                 if city["id"] == city_id:
@@ -165,6 +163,22 @@ class City(Base):
             if field not in data:
                 abort(400, f"Missing required field: {field}")
 
+        # # check if country exists, if not, create a new country
+        # country_name = data["country_name"]
+        # country = storage.get("Country", country_name)
+
+        # if not country:
+        #     # Create new country
+        #     try:
+        #         new_country = Country(name=country_name)
+        #         storage.add("Country", new_country)
+        #     except ValueError as exc:
+        #         abort(400, repr(exc))
+        #     country_id = new_country.id
+        # else:
+        #     country_id = country.id
+
+        # Create new city
         try:
             new_city = City(
                 country_id=data["country_id"],

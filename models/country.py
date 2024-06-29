@@ -160,7 +160,7 @@ class Country(Base):
         return jsonify(c)
 
     @staticmethod
-    def create():
+    def create_country():
         """ Class method that creates a new country"""
         if request.get_json() is None:
             abort(400, "Not a JSON")
